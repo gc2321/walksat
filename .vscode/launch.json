@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - WalkSat",
+            "request": "launch",
+            "mainClass": "walkSat.com.example.java.WalkSat",
+            "projectName": "walksat_f83b9faf"
+        },
+        {
+            "type": "java",
+            "name": "CodeLens (Launch) - WalkSat",
+            "request": "launch",
+            "mainClass": "walkSat.com.example.java.WalkSat",
+            "projectName": "Q3_cd43bc90"
+        }
+    ]
+}
