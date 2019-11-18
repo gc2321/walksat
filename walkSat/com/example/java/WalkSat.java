@@ -1,6 +1,9 @@
 package walkSat.com.example.java;
 
 import java.util.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 
 public class WalkSat {
 
@@ -10,7 +13,7 @@ public class WalkSat {
     List<Integer> symbols;
     Set<Integer> symbolSet;
     int totalFlipUsed;
-   
+
     public WalkSat(int clauseNum, int symNum) {
         rand = new Random();
         totalFlipUsed = 0;
@@ -18,7 +21,7 @@ public class WalkSat {
         this.clauses = new ArrayList<List<Integer>>();
         this.map = new HashMap<Integer, Boolean>();
         this.symbolSet = new HashSet<Integer>();
-        
+
         for (int i = 1; i <= symNum; i++) {
             this.symbols.add(i);
         }
@@ -31,7 +34,7 @@ public class WalkSat {
                 int randIndex = rand.nextInt(tempSymb.size());
                 int num = tempSymb.remove(randIndex);
                 int randSign = rand.nextInt(2);
-                //clause.add(num);
+                // clause.add(num);
                 if (randSign % 2 == 0)
                     clause.add(num);
                 else
@@ -55,67 +58,91 @@ public class WalkSat {
 
     public static void main(String[] args) {
 
-        for (int c = 20; c <= 200; c += 20) {
-            for (int it = 0; it < 50; it++) {
-                boolean solved = false;
-                           
-                WalkSat ws = new WalkSat(c, 20);
-                // for (int i = 0; i < ws.clauses.size(); i++) {
-                //     for (int j = 0; j < 3; j++) {
-                //         System.out.println(ws.clauses.get(i).get(j));
-                //     }
-                //     System.out.println();
-                // }
+        try {
+            PrintWriter write = new PrintWriter(new File("test.csv"));
+            StringBuilder sb = new StringBuilder();
+            sb.append("clause,");
+            sb.append(',');
+            sb.append("times");
+            sb.append('\n');
 
-                long start = System.currentTimeMillis();
-
-                //while(ws.totalFlipUsed <= ws.maxFlips) {
-                while(true) {
-                    List<List<Integer>> listOfFalseClauses = ws.getAllFalseClauses();
-                    if (listOfFalseClauses.size() == 0) {
-                        solved = true;
-                        break;
-                    } else {
-                        int randNum = ws.rand.nextInt(10);
-                        if (randNum <= 4) {
-                            List<Integer> randomFalseClause = ws.getRandomClause(listOfFalseClauses);
-                            ws.randomSymbolFlip(randomFalseClause);
+            for (int c = 20; c <= 200; c += 20) {
+                for (int it = 0; it < 50; it++) {
+                    boolean solved = false;
+    
+                    WalkSat ws = new WalkSat(c, 20);
+                    for (int i = 0; i < ws.clauses.size(); i++) {
+                        // for (int j = 0; j < 3; j++) {
+                        // System.out.println(ws.clauses.get(i).get(j));
+                        // }
+                        // System.out.println();
+                    }
+    
+                    long start = System.currentTimeMillis();
+    
+                    // while(ws.totalFlipUsed <= ws.maxFlips) {
+                    while (true) {
+                        List<List<Integer>> listOfFalseClauses = ws.getAllFalseClauses();
+                        if (listOfFalseClauses.size() == 0) {
+                            solved = true;
+                            break;
                         } else {
-                            int symb = ws.getSymbolWithMinFalseClauses();
-                            ws.flipSymbol(symb);
+                            int randNum = ws.rand.nextInt(10);
+                            if (randNum <= 4) {
+                                List<Integer> randomFalseClause = ws.getRandomClause(listOfFalseClauses);
+                                ws.randomSymbolFlip(randomFalseClause);
+                            } else {
+                                int symb = ws.getSymbolWithMinFalseClauses();
+                                ws.flipSymbol(symb);
+                            }
+                        }
+    
+                        long end = System.currentTimeMillis();
+                        float sec = (end - start) / 1000F;
+                        if (sec > 10) {
+                            break;
                         }
                     }
-
-                    long end = System.currentTimeMillis();
-                    float sec = (end - start) / 1000F;
-                    if(sec > 10){
-                        break;
+    
+                    if (solved) {
+                        System.out.println(it + " clause " + c + " used " + ws.totalFlipUsed);
+                        sb.append(String.valueOf(c));
+                        sb.append(',');
+                        sb.append(String.valueOf(ws.totalFlipUsed));
+                        sb.append('\n');
+                        // for (Integer key : ws.map.keySet()) {
+                        // System.out.println(key + " " + ws.map.get(key));
+                        // }
+                    } else {
+                        System.out.println(it + " clause " + c + " time out");
+                        sb.append(String.valueOf(c));
+                        sb.append(',');
+                        sb.append(String.valueOf(-1));
+                        sb.append('\n');
                     }
                 }
-
-                if (solved) {
-                    System.out.println(it + " clause " + c + " used " + ws.totalFlipUsed);
-                    // for (Integer key : ws.map.keySet()) {
-                    //     System.out.println(key + "  " + ws.map.get(key));
-                    // }
-                } else {
-                    System.out.println(it + " clause " + c + " time out"); 
-                }
             }
+    
+            write.write(sb.toString());
+            write.close();
+
+        } catch (FileNotFoundException e) {
+
         }
 
+        
     }
 
     public List<List<Integer>> getAllFalseClauses() {
         List<List<Integer>> falseClauses = new ArrayList<>();
         for (List<Integer> clause : this.clauses) {
-            boolean flag = true;
+            int flag = 0;
             for (Integer symbol : clause) {
                 if (!isSymbolTrue(symbol)) {
-                    flag = false;
+                    flag++;
                 }
             }
-            if (!flag) {
+            if (flag == 3) {
                 falseClauses.add(clause);
             }
         }
@@ -145,7 +172,8 @@ public class WalkSat {
         int minFalseClauses = Integer.MAX_VALUE;
 
         for (Integer symb : this.map.keySet()) {
-            if(!this.symbolSet.contains(symb)) continue;
+            if (!this.symbolSet.contains(symb))
+                continue;
             int falseClause = this.getAllFalseClauses(symb).size();
             if (falseClause < minFalseClauses) {
                 symbol = symb;
@@ -182,8 +210,8 @@ public class WalkSat {
     public boolean isSymbolTrue(int symb) {
         if (this.map.get(Math.abs(symb)) == true) {
             return symb > 0;
-        } 
-        return symb < 0;        
+        }
+        return symb < 0;
     }
 
     public void randomSymbolFlip(List<Integer> clause) {
@@ -198,7 +226,7 @@ public class WalkSat {
         this.flipSymbol(symbol);
     }
 
-    public void flipSymbol(int symbol) {  
+    public void flipSymbol(int symbol) {
         this.map.put(Math.abs(symbol), !this.map.get(Math.abs(symbol)));
         this.totalFlipUsed++;
     }
